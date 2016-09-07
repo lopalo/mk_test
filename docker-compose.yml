@@ -1,0 +1,63 @@
+version: '2'
+volumes:
+    db:
+        driver: local
+    test_db:
+        driver: local
+services:
+    server:
+        container_name: server
+        image: mk_test/server
+        volumes:
+            - ".:/mk_test"
+        ports:
+            - "9080:80"
+        command: python app.py --port=80 --pg_host=db
+        depends_on:
+            - create_db
+    db:
+        container_name: db
+        image: postgres:9.5.3
+        ports:
+            - "127.0.0.1:5432:5432"
+        volumes:
+            - "db:/var/lib/postgresql/data"
+    data_source:
+        container_name: data_source
+        image: mk_test/server
+        volumes:
+            - ".:/mk_test"
+        command: python data_source.py db
+        depends_on:
+            - create_db
+    create_db:
+        container_name: create_db
+        image: mk_test/server
+        volumes:
+            - ".:/mk_test"
+        command: python models.py db
+        depends_on:
+            - db
+
+
+    #test_server:
+    #    container_name: server
+    #    image: mk_test/server
+    #    volumes:
+    #        - ".:/mk_test"
+    #    command: python --port=80 --pg_host=test_pg
+    #test_pg:
+    #    container_name: test_pg
+    #    image: postgres:9.5.3
+    #    ports:
+    #        - "127.0.0.1:5432:5432"
+    #    volumes:
+    #        - "test_db:/var/lib/postgresql/data"
+    #test:
+    #    container_name: test
+    #    image: mk_test/server
+    #    volumes:
+    #        - ".:/mk_test"
+    #    command: python
+
+

@@ -1,0 +1,11 @@
+*.pyc
+*.log
+*logs
+*/__pycache__
+db
+dist
+nohup.out
+.vagrant
+*/node_modules
+bundle.js*
+
