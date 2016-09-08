@@ -1,0 +1,3 @@
+#!/bin/bash
+DIR=`dirname $(readlink -f "$0")`/..
+docker run --rm -v $DIR:/mk_test -ti mk_test/frontend npm run build
