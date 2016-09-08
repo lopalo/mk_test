@@ -1,4 +1,3 @@
-import sys
 import time
 from itertools import permutations
 from random import Random
@@ -62,22 +61,43 @@ class DataSource:
         ])
 
 
-def start_db_updating(host, **kwargs):
+def db_updater(host, **kwargs):
     source = DataSource(**kwargs)
     engine = get_engine(host)
     with engine.begin() as conn:
         conn.execute(objects_status.delete())
         conn.execute(objects.delete())
         conn.execute(source.get_create_expression())
+    yield
     while True:
-        ts = time.time()
         upd = source.update_objects()
         engine.execute(upd)
+        yield
+
+
+def start_db_updating(*args, **kwargs):
+    updater = db_updater(*args, **kwargs)
+    while True:
+        ts = time.time()
+        next(updater)
         td = time.time() - ts
         time.sleep(max(1 - td, 0))
 
 
+def main():
+    from tornado.options import define, options
+    define("pg_host", help="Hostname of PostgreSQL")
+    define("objects_amount", type=int, default=1000,
+            help="Amount of generated objects")
+    define("update_factor", type=float, default=.6,
+            help="Fraction of objects updated every second")
+    options.parse_command_line()
+    start_db_updating(options.pg_host,
+                      objects_amount=options.objects_amount,
+                      update_factor=options.update_factor)
+
+
 if __name__ == "__main__":
-    start_db_updating(sys.argv[1], objects_amount=1000, update_factor=.6)
+    main()
 
 

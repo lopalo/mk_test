@@ -27,7 +27,7 @@ services:
         image: mk_test/server
         volumes:
             - ".:/mk_test"
-        command: python data_source.py db
+        command: python data_source.py --pg_host=db
         depends_on:
             - create_db
     create_db:
@@ -39,25 +39,36 @@ services:
         depends_on:
             - db
 
+    # environment for testing
+    test_server:
+        container_name: test_server
+        image: mk_test/server
+        volumes:
+            - ".:/mk_test"
+        command: python app.py --port=80 --pg_host=test_db
+        depends_on:
+            - create_test_db
+    test_db:
+        container_name: test_db
+        image: postgres:9.5.3
+        volumes:
+            - "test_db:/var/lib/postgresql/data"
+    test:
+        container_name: test
+        image: mk_test/server
+        volumes:
+            - ".:/mk_test"
+        command: python test.py
+        depends_on:
+            - test_server
+    create_test_db:
+        container_name: create_test_db
+        image: mk_test/server
+        volumes:
+            - ".:/mk_test"
+        command: python models.py test_db
+        depends_on:
+            - test_db
 
-    #test_server:
-    #    container_name: server
-    #    image: mk_test/server
-    #    volumes:
-    #        - ".:/mk_test"
-    #    command: python --port=80 --pg_host=test_pg
-    #test_pg:
-    #    container_name: test_pg
-    #    image: postgres:9.5.3
-    #    ports:
-    #        - "127.0.0.1:5432:5432"
-    #    volumes:
-    #        - "test_db:/var/lib/postgresql/data"
-    #test:
-    #    container_name: test
-    #    image: mk_test/server
-    #    volumes:
-    #        - ".:/mk_test"
-    #    command: python
 
 

@@ -4,6 +4,7 @@ import asyncio
 from tornado.platform.asyncio import AsyncIOMainLoop
 from tornado.web import Application, RequestHandler, StaticFileHandler
 from tornado.websocket import WebSocketHandler
+from tornado.log import app_log
 
 from sqlalchemy import select, case
 from sqlalchemy.sql import func
@@ -44,12 +45,19 @@ class ListenersHub:
 
     def add(self, ws):
         self._listeners.append(Listener(ws))
+        self._log_listeners()
 
     def broadcast(self, data):
         listeners = [i for i in self._listeners if i.connected]
+        listeners_changed = self._listeners != listeners
         self._listeners = listeners
         for listener in listeners:
             listener.send(data)
+        if listeners_changed:
+            self._log_listeners()
+
+    def _log_listeners(self):
+        app_log.info("Amount of listeners: {}".format(len(self._listeners)))
 
 
 class WSHandler(WebSocketHandler):
@@ -77,6 +85,7 @@ class RowLimitsHandler(RequestHandler):
 
 async def configure_db(host):
     return await create_engine(**get_engine_args(host))
+
 
 async def poll_db(loop, db, hub, period):
     o = objects.c
